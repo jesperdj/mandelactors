@@ -23,7 +23,7 @@ object Main {
     println("Copyright (C) 2011  Jesper de Jong")
 
     println("Initializing")
-    val rectangle = new Rectangle(0, 0, 719, 479)
+    val rectangle = new Rectangle(0, 0, Config.imageWidth - 1, Config.imageHeight - 1)
 
     val p1 = new PalettePoint(0.0f, new Color(0.0f, 0.0f, 0.6f))
     val p2 = new PalettePoint(0.2f, new Color(1.0f, 0.5f, 0.0f))
@@ -33,10 +33,10 @@ object Main {
     val p6 = new PalettePoint(1.0f, Color.White)
     val palette = new Palette(p1, p2, p3, p4, p5, p6)
 
-    val mandelbrot = new Mandelbrot(rectangle, Complex(-0.87, 0.233), 0.01, 2000, palette)
+    val mandelbrot = new Mandelbrot(rectangle, Config.center, Config.scale, Config.maxIterations, palette)
 
-    val sampler = new StratifiedSampler(rectangle, 2, 2)
-    val image = new Image(rectangle.width, rectangle.height, new MitchellFilter)
+    val sampler = new StratifiedSampler(rectangle, Config.samplesPerPixelX, Config.samplesPerPixelY)
+    val image = new Image(rectangle.width, rectangle.height, Config.filter)
 
     // TODO: The current version does not use actors yet; it just uses the main thread for rendering. Implement this using actors.
 

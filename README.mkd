@@ -1,0 +1,5 @@
+# MandelActors
+
+This is a simple Mandelbrot fractal generator that uses Scala actors.
+
+I wrote this to learn more about how actors work.

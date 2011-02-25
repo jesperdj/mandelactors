@@ -1,0 +1,6 @@
+.idea/
+mandelactors.iml
+mandelactors.ipr
+mandelactors.iws
+target/
+output*.png

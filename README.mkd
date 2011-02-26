@@ -1,5 +1,21 @@
 # MandelActors
 
-This is a simple Mandelbrot fractal generator that uses Scala actors.
+This is a simple [Mandelbrot fractal](http://en.wikipedia.org/wiki/Mandelbrot_set) generator that uses Scala actors. I wrote this to learn more about how actors work.
 
-I wrote this to learn more about how actors work.
+NOTE: In the current version, actors are not yet used. I intend to add this soon.
+
+## Prerequisites
+
+To compile and run MandelActors, you need:
+
+- [JDK for Java 6](http://java.sun.com/javase/)
+- [Scala 2.8](http://www.scala-lang.org/)
+- [Apache Maven](http://maven.apache.org/)
+
+After installing the JDK and Maven and adding their `bin` directories to your `PATH`, you can compile it with: `mvn package`
+
+If you have compiled MandelActors successfully, run it with (on Windows): `scala -cp target\classes org.jesperdj.mandelactors.Main`
+
+## Configuration
+
+To configure MandelActors, edit the file `mandelactors.properties`. You can set the size of the output image, change settings for the sampler and reconstruction filter and parameters for the Mandelbrot algorithm.

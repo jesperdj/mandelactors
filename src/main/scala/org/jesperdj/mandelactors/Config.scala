@@ -18,7 +18,7 @@
 package org.jesperdj.mandelactors
 
 object Config {
-  import java.lang.{ Double => JavaDouble, Integer => JavaInteger }
+  import java.lang.{ Boolean => JavaBoolean, Integer => JavaInteger, Double => JavaDouble }
 
   private val props = {
     val properties = new java.util.Properties
@@ -29,26 +29,31 @@ object Config {
     properties
   }
 
-  val imageWidth = JavaInteger.parseInt(props.getProperty("image.width", "1050"))
-  val imageHeight = JavaInteger.parseInt(props.getProperty("image.height", "600"))
+  val imageWidth: Int = JavaInteger.parseInt(props.getProperty("image.width", "1050"))
+  val imageHeight: Int = JavaInteger.parseInt(props.getProperty("image.height", "600"))
 
-  val samplesPerPixelX = JavaInteger.parseInt(props.getProperty("samples.x", "1"))
-  val samplesPerPixelY = JavaInteger.parseInt(props.getProperty("samples.y", "1"))
+  val samplesPerPixelX: Int = JavaInteger.parseInt(props.getProperty("sampler.samplesPerPixelX", "1"))
+  val samplesPerPixelY: Int = JavaInteger.parseInt(props.getProperty("sampler.samplesPerPixelY", "1"))
+  val jitter: Boolean = JavaBoolean.parseBoolean(props.getProperty("sampler.jitter", "true"))
 
   def filter: Filter = {
-    props.getProperty("filter", "Box") match {
+    props.getProperty("filter.name", "Box") match {
       case "Box" => new BoxFilter
       case "Triangle" => new TriangleFilter
       case "Gaussian" => new GaussianFilter
       case "Mitchell" => new MitchellFilter
       case "LanczosSinc" => new LanczosSincFilter
-      case _ => new BoxFilter
+      case s => println("Invalid filter specified: %s - using BoxFilter instead" format s.toString); new BoxFilter
     }
   }
 
   // TODO: Palette configuration
 
-  val center = Complex(JavaDouble.parseDouble(props.getProperty("center.re", "-0.75")), JavaDouble.parseDouble(props.getProperty("center.im", "0.0")))
-  val scale = JavaDouble.parseDouble(props.getProperty("scale", "1.75"))
-  val maxIterations = JavaInteger.parseInt(props.getProperty("maxIterations", "1000"))
+  val center: Complex = Complex(
+    JavaDouble.parseDouble(props.getProperty("mandelbrot.center.re", "-0.75")),
+    JavaDouble.parseDouble(props.getProperty("mandelbrot.center.im", "0.0"))
+  )
+
+  val scale: Double = JavaDouble.parseDouble(props.getProperty("mandelbrot.scale", "1.75"))
+  val maxIterations: Int = JavaInteger.parseInt(props.getProperty("mandelbrot.maxIterations", "1000"))
 }

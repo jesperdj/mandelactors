@@ -23,20 +23,27 @@ object Main {
     println("Copyright (C) 2011  Jesper de Jong")
 
     println("Initializing")
-    val rectangle = new Rectangle(0, 0, Config.imageWidth - 1, Config.imageHeight - 1)
+    val rectangle = Rectangle(Config.imageWidth, Config.imageHeight)
+    println("- Image size: %d x %d" format (Config.imageWidth, Config.imageHeight))
 
-    val p1 = new PalettePoint(0.0f, new Color(0.0f, 0.0f, 0.6f))
-    val p2 = new PalettePoint(0.2f, new Color(1.0f, 0.5f, 0.0f))
-    val p3 = new PalettePoint(0.4f, new Color(0.7f, 1.0f, 0.5f))
-    val p4 = new PalettePoint(0.6f, new Color(0.5f, 0.5f, 0.7f))
-    val p5 = new PalettePoint(0.8f, new Color(0.2f, 0.2f, 1.0f))
+    val sampler = new StratifiedSampler(rectangle, Config.samplesPerPixelX, Config.samplesPerPixelY, Config.jitter)
+    println("- Samples per pixel: %d x %d, jitter: %b" format (Config.samplesPerPixelX, Config.samplesPerPixelY, Config.jitter))
+
+    val filter = Config.filter
+    println("- Filter: %s" format filter.toString)
+
+    val image = new Image(rectangle.width, rectangle.height, filter)
+
+    val p1 = new PalettePoint(0.0f, Color(0.0f, 0.0f, 0.6f))
+    val p2 = new PalettePoint(0.2f, Color(1.0f, 0.5f, 0.0f))
+    val p3 = new PalettePoint(0.4f, Color(0.7f, 1.0f, 0.5f))
+    val p4 = new PalettePoint(0.6f, Color(0.5f, 0.5f, 0.7f))
+    val p5 = new PalettePoint(0.8f, Color(0.2f, 0.2f, 1.0f))
     val p6 = new PalettePoint(1.0f, Color.White)
     val palette = new Palette(p1, p2, p3, p4, p5, p6)
 
     val mandelbrot = new Mandelbrot(rectangle, Config.center, Config.scale, Config.maxIterations, palette)
-
-    val sampler = new StratifiedSampler(rectangle, Config.samplesPerPixelX, Config.samplesPerPixelY)
-    val image = new Image(rectangle.width, rectangle.height, Config.filter)
+    println("- Center: %s, scale: %.12g, max iterations: %d" format (Config.center, Config.scale, Config.maxIterations))
 
     // TODO: The current version does not use actors yet; it just uses the main thread for rendering. Implement this using actors.
 

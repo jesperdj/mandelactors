@@ -22,6 +22,11 @@ class Rectangle (val left: Int, val top: Int, val right: Int, val bottom: Int) {
   val height = bottom - top + 1
 }
 
+object Rectangle {
+  def apply(left: Int, top: Int, right: Int, bottom: Int) = new Rectangle(left, top, right, bottom)
+  def apply(width: Int, height: Int) = new Rectangle(0, 0, width - 1, height - 1)
+}
+
 class Raster[T : ClassManifest] (val rectangle: Rectangle) {
   private val data = new Array[T](rectangle.width * rectangle.height)
 

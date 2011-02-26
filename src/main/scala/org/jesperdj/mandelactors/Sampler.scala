@@ -17,6 +17,9 @@
  */
 package org.jesperdj.mandelactors
 
+// Ideas for sampling and reconstruction are reused from my project ScalaRay - https://github.com/jesperdj/scalaray
+// and come from the book Physically Based Rendering - From Theory to Implementation - http://www.pbrt.org/
+
 import scala.collection.immutable.Traversable
 
 class Sample (val x: Float, val y: Float)
@@ -28,20 +31,22 @@ trait Sampler {
   val samples: Traversable[Sample]
 }
 
-class StratifiedSampler (val rectangle: Rectangle, samplesPerPixelX: Int, samplesPerPixelY: Int) extends Sampler {
+class StratifiedSampler (val rectangle: Rectangle, samplesPerPixelX: Int, samplesPerPixelY: Int, jitter: Boolean = true) extends Sampler {
   val samplesPerPixel = samplesPerPixelX * samplesPerPixelY
 
   val samples: Traversable[Sample] = new Traversable[Sample] {
     def foreach[U](f: Sample => U): Unit =
       for (y <- rectangle.top to rectangle.bottom; x <- rectangle.left to rectangle.right) { generateSamples(x, y) foreach f }
 
-    override val size = rectangle.width * rectangle.height * samplesPerPixelX * samplesPerPixelY
+    override val size = rectangle.width * rectangle.height * samplesPerPixel
 
     private val random = new scala.util.Random
 
     // Generate samples for one pixel
     private def generateSamples(x: Int, y: Int): Traversable[Sample] =
-      for (sy <- 0 until samplesPerPixelY; sx <- 0 until samplesPerPixelX) yield
-        new Sample(x.toFloat + ((sx.toFloat + random.nextFloat) / samplesPerPixelX), y.toFloat + ((sy.toFloat + random.nextFloat) / samplesPerPixelY))
+      for (sy <- 0 until samplesPerPixelY; sx <- 0 until samplesPerPixelX) yield {
+        val (jx, jy) = if (jitter) (random.nextFloat, random.nextFloat) else (0.5f, 0.5f)
+        new Sample(x + ((sx + jx) / samplesPerPixelX), y + ((sy + jy) / samplesPerPixelY))
+      }
   }
 }

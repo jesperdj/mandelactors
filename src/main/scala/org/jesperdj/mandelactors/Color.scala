@@ -29,17 +29,20 @@ class Color (val red: Float, val green: Float, val blue: Float) {
 object Color {
   val Black = new Color(0.0f, 0.0f, 0.0f)
   val White = new Color(1.0f, 1.0f, 1.0f)
+  def apply(red: Float, green: Float, blue: Float) = new Color(red, green, blue)
 }
 
 class PalettePoint (val value: Float, val color: Color)
 
 class Palette (points: PalettePoint*) {
   def apply(value: Float): Color = {
+    // Find the interval that value is between
     val (hd, tl) = points span { _.value <= value }
     if (hd.isEmpty) tl.head.color else if (tl.isEmpty) hd.last.color else {
       val left = hd.last
       val right = tl.head
 
+      // Linearly interpolate between the start and end color of the interval
       val weight = (value - left.value) / (right.value - left.value)
       left.color * (1.0f - weight) + right.color * weight
     }

@@ -17,6 +17,9 @@
  */
 package org.jesperdj.mandelactors
 
+// Ideas for sampling and reconstruction are reused from my project ScalaRay - https://github.com/jesperdj/scalaray
+// and come from the book Physically Based Rendering - From Theory to Implementation - http://www.pbrt.org/
+
 trait Filter extends ((Float, Float) => Float) {
   val extentX: Float
   val extentY: Float
@@ -24,10 +27,14 @@ trait Filter extends ((Float, Float) => Float) {
 
 class BoxFilter (val extentX: Float = 0.5f, val extentY: Float = 0.5f) extends Filter {
   def apply(x: Float, y: Float) = 1.0f
+
+  override def toString = "BoxFilter(%.3g, %.3g)" format (extentX, extentY)
 }
 
 class TriangleFilter (val extentX: Float = 2.0f, val extentY: Float = 2.0f) extends Filter {
   def apply(x: Float, y: Float) = math.max(0.0f, extentX - x.abs) * math.max(0.0f, extentY - y.abs)
+
+  override def toString = "TriangleFilter(%.3g, %.3g)" format (extentX, extentY)
 }
 
 class GaussianFilter (val extentX: Float = 2.0f, val extentY: Float = 2.0f, alpha: Float = 2.0f) extends Filter {
@@ -37,6 +44,8 @@ class GaussianFilter (val extentX: Float = 2.0f, val extentY: Float = 2.0f, alph
   private def gaussian(d: Float, exp: Float) = math.max(0.0f, math.exp(-alpha * d * d).toFloat - exp)
 
   def apply(x: Float, y: Float) = gaussian(x, expX) * gaussian(y, expY)
+
+  override def toString = "GaussianFilter(%.3g, %.3g, %.3g)" format (extentX, extentY, alpha)
 }
 
 class MitchellFilter (val extentX: Float = 2.0f, val extentY: Float = 2.0f, b: Float = 1.0f / 3.0f, c: Float = 1.0f / 3.0f) extends Filter {
@@ -48,6 +57,8 @@ class MitchellFilter (val extentX: Float = 2.0f, val extentY: Float = 2.0f, b: F
   }
 
   def apply(x: Float, y: Float) = mitchell(x / extentX) * mitchell(y / extentY)
+
+  override def toString = "MitchellFilter(%.3g, %.3g, %.3g, %.3g)" format (extentX, extentY, b, c)
 }
 
 class LanczosSincFilter (val extentX: Float = 4.0f, val extentY: Float = 4.0f, tau: Float = 3.0f) extends Filter {
@@ -61,4 +72,6 @@ class LanczosSincFilter (val extentX: Float = 4.0f, val extentY: Float = 4.0f, t
   }
 
   def apply(x: Float, y: Float) = lanczosSinc(x / extentX) * lanczosSinc(y / extentY)
+
+  override def toString = "LanczosSincFilter(%.3g, %.3g, %.3g)" format (extentX, extentY, tau)
 }

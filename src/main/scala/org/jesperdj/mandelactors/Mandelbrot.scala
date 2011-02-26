@@ -22,6 +22,8 @@ class Complex(val re: Double, val im: Double) {
   def *(c: Complex) = new Complex(re * c.re - im * c.im, im * c.re + re * c.im)
   def modulusSquared = re * re + im * im
   def modulus = math.sqrt(modulusSquared)
+
+  override def toString = "(%.12g, %.12g)" format (re, im)
 }
 
 object Complex {

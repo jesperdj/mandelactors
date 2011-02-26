@@ -33,14 +33,17 @@ class Image (width: Int, height: Int, filter: Filter) {
   }
 
   def add(sample: Sample, color: Color): Unit = {
+    // Convert sample to image coordinates
     val ix = sample.x - 0.5f
     val iy = sample.y - 0.5f
 
+    // Determine the pixels that are to be updated according to the extent of the filter
     val minX = math.max((ix - filter.extentX).ceil.toInt, rectangle.left)
     val maxX = math.min((ix + filter.extentX).floor.toInt, rectangle.right)
     val minY = math.max((iy - filter.extentY).ceil.toInt, rectangle.top)
     val maxY = math.min((iy + filter.extentY).floor.toInt, rectangle.bottom)
 
+    // Update the relevant pixels
     for (y <- minY to maxY; x <- minX to maxX) {
       val pixel = raster(x, y)
       val weight = filter(x - ix, y - iy)
@@ -55,7 +58,7 @@ class Image (width: Int, height: Int, filter: Filter) {
   def toBufferedImage: java.awt.image.BufferedImage = {
     def toByte(value: Float): Int = if (value < 0.0f) 0 else if (value > 1.0f) 255 else (value * 255.0f).toInt
 
-    val img = new java.awt.image.BufferedImage(width, height, java.awt.image.BufferedImage.TYPE_INT_RGB)
+    val bufferedImage = new java.awt.image.BufferedImage(width, height, java.awt.image.BufferedImage.TYPE_INT_RGB)
 
     for (y <- rectangle.top to rectangle.bottom; x <- rectangle.left to rectangle.right) {
       val px = x - rectangle.left
@@ -64,9 +67,9 @@ class Image (width: Int, height: Int, filter: Filter) {
       val pixel = raster(px, py)
       val color = if (pixel.weight != 0.0f) pixel.color / pixel.weight else Color.Black
 
-      img.setRGB(px, py, toByte(color.red) << 16 | toByte(color.green) << 8 | toByte(color.blue))
+      bufferedImage.setRGB(px, py, toByte(color.red) << 16 | toByte(color.green) << 8 | toByte(color.blue))
     }
 
-    img
+    bufferedImage
   }
 }

@@ -40,7 +40,11 @@ object EventActorsRenderer extends Renderer {
     val batchSize = Config.actorsRendererBatchSize
     println("- Batch size: " + batchSize)
 
-    val countDownLatch = new CountDownLatch(sampler.samples.size)
+    val batchCount = (sampler.samples.size.toFloat / batchSize).ceil.toInt
+    println("- Number of samples: " + sampler.samples.size)
+    println("- Number of batches: " + batchCount)
+
+    val countDownLatch = new CountDownLatch(batchCount)
 
     println("- Starting actors")
     var samples = sampler.samples
@@ -48,7 +52,7 @@ object EventActorsRenderer extends Renderer {
       // Create an event-driven actor to do the computation for a batch of samples
       val computeActor = actor {
         react {
-          case b: Batch => for (s <- b.samples) { image.add(s, compute(s)); countDownLatch.countDown }
+          case b: Batch => for (s <- b.samples) { image.add(s, compute(s)) }; countDownLatch.countDown
         }
       }
 
@@ -77,7 +81,7 @@ object ThreadActorsRenderer extends Renderer {
     def act() {
       loop {
         receive {
-          case b: Batch => for (s <- b.samples) { image.add(s, compute(s)); countDownLatch.countDown }
+          case b: Batch => for (s <- b.samples) { image.add(s, compute(s)) }; countDownLatch.countDown
           case 'Exit => exit
         }
       }
@@ -88,7 +92,11 @@ object ThreadActorsRenderer extends Renderer {
     val batchSize = Config.actorsRendererBatchSize
     println("- Batch size: " + batchSize)
 
-    val countDownLatch = new CountDownLatch(sampler.samples.size)
+    val batchCount = (sampler.samples.size.toFloat / batchSize).ceil.toInt
+    println("- Number of samples: " + sampler.samples.size)
+    println("- Number of batches: " + batchCount)
+
+    val countDownLatch = new CountDownLatch(batchCount)
 
     val actorCount = Config.actorsRendererActorCount
 

@@ -32,7 +32,7 @@ This uses event-based actors: actors that use `react` to process messages. For e
 
 Configuration settings:
 
-- `renderer.batchSize` The number of samples per batch (default: 1024).
+- `renderer.batchSize` The number of samples per batch (default: 4096).
 
 ### ThreadActors
 
@@ -43,7 +43,7 @@ The ThreadActors renderer creates a fixed number of actors and sends them batche
 Configuration settings:
 
 - `renderer.actorCount` The number of actors to create (default: twice the number of CPU cores available to the JVM).
-- `renderer.batchSize` The number of samples per batch (default: 1024).
+- `renderer.batchSize` The number of samples per batch (default: 4096).
 
 ### Threads
 
@@ -52,4 +52,4 @@ This renderer does not use actors, but threads. It starts up a number of threads
 Configuration settings:
 
 - `renderer.threadCount` The number of threads to create (default: twice the number of CPU cores available to the JVM).
-- `renderer.batchSize` The number of samples per batch (default: 1024).
+- `renderer.batchSize` The number of samples per batch (default: 4096).

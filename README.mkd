@@ -42,5 +42,5 @@ The ThreadActors renderer creates a fixed number of actors and sends them batche
 
 Configuration settings:
 
-- `renderer.actorCount` The number of actors to create (default: 4).
+- `renderer.actorCount` The number of actors to create (default: twice the number of CPU cores available to the JVM).
 - `renderer.batchSize` The number of samples per batch (default: 1024).

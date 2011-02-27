@@ -61,7 +61,8 @@ object Config {
   }
 
   // Number of actors (for thread-based actor renderer)
-  val actorsRendererActorCount: Int = JavaInteger.parseInt(props.getProperty("renderer.actorCount", "4"))
+  val actorsRendererActorCount: Int = JavaInteger.parseInt(
+    props.getProperty("renderer.actorCount", (2 * Runtime.getRuntime.availableProcessors).toString))
 
   // Number of samples per batch
   val actorsRendererBatchSize: Int = JavaInteger.parseInt(props.getProperty("renderer.batchSize", "1024"))

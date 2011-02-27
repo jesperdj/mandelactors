@@ -41,7 +41,6 @@ object EventActorsRenderer extends Renderer {
     println("- Batch size: " + batchSize)
 
     val batchCount = (sampler.samples.size.toFloat / batchSize).ceil.toInt
-    println("- Number of samples: " + sampler.samples.size)
     println("- Number of batches: " + batchCount)
 
     val countDownLatch = new CountDownLatch(batchCount)
@@ -93,7 +92,6 @@ object ThreadActorsRenderer extends Renderer {
     println("- Batch size: " + batchSize)
 
     val batchCount = (sampler.samples.size.toFloat / batchSize).ceil.toInt
-    println("- Number of samples: " + sampler.samples.size)
     println("- Number of batches: " + batchCount)
 
     val countDownLatch = new CountDownLatch(batchCount)

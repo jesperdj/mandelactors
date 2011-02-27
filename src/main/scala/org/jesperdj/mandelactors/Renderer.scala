@@ -29,7 +29,8 @@ object SingleThreadRenderer extends Renderer {
   override def toString = "SingleThreadRenderer"
 }
 
-object ActorsRenderer extends Renderer {
+// Renderer that uses event-based actors
+object EventActorsRenderer extends Renderer {
   import scala.actors.Actor._
   import java.util.concurrent.CountDownLatch
 
@@ -39,7 +40,7 @@ object ActorsRenderer extends Renderer {
     val batchSize = Config.actorsRendererBatchSize
     println("- Batch size: " + batchSize)
 
-    val counter = new CountDownLatch(sampler.samples.size)
+    val countDownLatch = new CountDownLatch(sampler.samples.size)
 
     println("- Starting actors")
     var samples = sampler.samples
@@ -47,7 +48,7 @@ object ActorsRenderer extends Renderer {
       // Create an event-driven actor to do the computation for a batch of samples
       val computeActor = actor {
         react {
-          case b: Batch => for (s <- b.samples) { image.add(s, compute(s)); counter.countDown }
+          case b: Batch => for (s <- b.samples) { image.add(s, compute(s)); countDownLatch.countDown }
         }
       }
 
@@ -59,8 +60,63 @@ object ActorsRenderer extends Renderer {
 
     // Wait for all the actors to finish
     println("- Waiting for actors to finish")
-    counter.await
+    countDownLatch.await
   }
 
-  override def toString = "ActorsRenderer"
+  override def toString = "EventActorsRenderer"
+}
+
+// Renderer that uses thread-based actors
+object ThreadActorsRenderer extends Renderer {
+  import scala.actors.Actor
+  import java.util.concurrent.CountDownLatch
+
+  private case class Batch(samples: Traversable[Sample])
+
+  private class ComputeActor (compute: Sample => Color, image: Image, countDownLatch: CountDownLatch) extends Actor {
+    def act() {
+      loop {
+        receive {
+          case b: Batch => for (s <- b.samples) { image.add(s, compute(s)); countDownLatch.countDown }
+          case 'Exit => exit
+        }
+      }
+    }
+  }
+
+  override def render(sampler: Sampler, compute: Sample => Color, image: Image) {
+    val batchSize = Config.actorsRendererBatchSize
+    println("- Batch size: " + batchSize)
+
+    val countDownLatch = new CountDownLatch(sampler.samples.size)
+
+    val actorCount = Config.actorsRendererActorCount
+
+    println("- Starting actors; number of actors: " + actorCount)
+    val computeActors = new Array[Actor](actorCount)
+    for (i <- 0 until actorCount) computeActors(i) = new ComputeActor(compute, image, countDownLatch).start
+
+    println("- Sending messages")
+    var i = 0
+    var samples = sampler.samples
+    while (samples.nonEmpty) {
+      // Select the actor to send the next message to
+      val computeActor = computeActors(i % actorCount); i += 1
+
+      // Get a batch of samples and send it to the actor
+      val (batch, rest) = samples.splitAt(batchSize)
+      computeActor ! Batch(batch)
+      samples = rest
+    }
+
+    // Wait for all the actors to finish
+    println("- Waiting for actors to finish")
+    countDownLatch.await
+
+    // Stop the actors
+    println("- Stopping actors")
+    computeActors foreach { _ ! 'Exit }
+  }
+
+  override def toString = "ThreadActorsRenderer"
 }

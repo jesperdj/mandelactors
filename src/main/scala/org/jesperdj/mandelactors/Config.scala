@@ -29,13 +29,16 @@ object Config {
     properties
   }
 
+  // Image dimensions
   val imageWidth: Int = JavaInteger.parseInt(props.getProperty("image.width", "1050"))
   val imageHeight: Int = JavaInteger.parseInt(props.getProperty("image.height", "600"))
 
+  // Sampler settings
   val samplesPerPixelX: Int = JavaInteger.parseInt(props.getProperty("sampler.samplesPerPixelX", "1"))
   val samplesPerPixelY: Int = JavaInteger.parseInt(props.getProperty("sampler.samplesPerPixelY", "1"))
   val jitter: Boolean = JavaBoolean.parseBoolean(props.getProperty("sampler.jitter", "true"))
 
+  // Reconstruction filter
   def filter: Filter = {
     props.getProperty("filter.name", "Box") match {
       case "Box" => new BoxFilter
@@ -47,23 +50,33 @@ object Config {
     }
   }
 
+  // Renderer
   def renderer: Renderer = {
     props.getProperty("renderer.name", "SingleThread") match {
       case "SingleThread" => SingleThreadRenderer
-      case "Actors" => ActorsRenderer
+      case "EventActors" => EventActorsRenderer
+      case "ThreadActors" => ThreadActorsRenderer
       case s => println("Invalid renderer specified: %s - using SingleThreadRenderer instead" format s.toString); SingleThreadRenderer
     }
   }
 
+  // Number of actors (for thread-based actor renderer)
+  val actorsRendererActorCount: Int = JavaInteger.parseInt(props.getProperty("renderer.actorCount", "4"))
+
+  // Number of samples per batch
   val actorsRendererBatchSize: Int = JavaInteger.parseInt(props.getProperty("renderer.batchSize", "1024"))
 
   // TODO: Palette configuration
 
+  // Center point on the complex plane
   val center: Complex = Complex(
     JavaDouble.parseDouble(props.getProperty("mandelbrot.center.re", "-0.75")),
     JavaDouble.parseDouble(props.getProperty("mandelbrot.center.im", "0.0"))
   )
 
+  // Zoom scale
   val scale: Double = JavaDouble.parseDouble(props.getProperty("mandelbrot.scale", "1.75"))
+
+  // Maximum number of iterations
   val maxIterations: Int = JavaInteger.parseInt(props.getProperty("mandelbrot.maxIterations", "1000"))
 }

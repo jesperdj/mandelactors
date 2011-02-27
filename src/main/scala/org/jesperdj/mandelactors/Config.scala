@@ -56,16 +56,21 @@ object Config {
       case "SingleThread" => SingleThreadRenderer
       case "EventActors" => EventActorsRenderer
       case "ThreadActors" => ThreadActorsRenderer
+      case "Threads" => ThreadsRenderer
       case s => println("Invalid renderer specified: %s - using SingleThreadRenderer instead" format s.toString); SingleThreadRenderer
     }
   }
 
   // Number of actors (for thread-based actor renderer)
-  val actorsRendererActorCount: Int = JavaInteger.parseInt(
+  val rendererActorCount: Int = JavaInteger.parseInt(
     props.getProperty("renderer.actorCount", (2 * Runtime.getRuntime.availableProcessors).toString))
 
+  // Number of threads (for ThreadsRenderer)
+  val rendererThreadCount: Int = JavaInteger.parseInt(
+    props.getProperty("renderer.threadCount", (2 * Runtime.getRuntime.availableProcessors).toString))
+
   // Number of samples per batch
-  val actorsRendererBatchSize: Int = JavaInteger.parseInt(props.getProperty("renderer.batchSize", "1024"))
+  val rendererBatchSize: Int = JavaInteger.parseInt(props.getProperty("renderer.batchSize", "1024"))
 
   // TODO: Palette configuration
 

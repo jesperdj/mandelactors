@@ -37,7 +37,7 @@ object EventActorsRenderer extends Renderer {
   private case class Batch(samples: Traversable[Sample])
 
   override def render(sampler: Sampler, compute: Sample => Color, image: Image) {
-    val batchSize = Config.actorsRendererBatchSize
+    val batchSize = Config.rendererBatchSize
     println("- Batch size: " + batchSize)
 
     val batchCount = (sampler.samples.size.toFloat / batchSize).ceil.toInt
@@ -88,7 +88,7 @@ object ThreadActorsRenderer extends Renderer {
   }
 
   override def render(sampler: Sampler, compute: Sample => Color, image: Image) {
-    val batchSize = Config.actorsRendererBatchSize
+    val batchSize = Config.rendererBatchSize
     println("- Batch size: " + batchSize)
 
     val batchCount = (sampler.samples.size.toFloat / batchSize).ceil.toInt
@@ -96,7 +96,7 @@ object ThreadActorsRenderer extends Renderer {
 
     val countDownLatch = new CountDownLatch(batchCount)
 
-    val actorCount = Config.actorsRendererActorCount
+    val actorCount = Config.rendererActorCount
 
     println("- Starting actors; number of actors: " + actorCount)
     val computeActors = new Array[Actor](actorCount)
@@ -125,4 +125,66 @@ object ThreadActorsRenderer extends Renderer {
   }
 
   override def toString = "ThreadActorsRenderer"
+}
+
+// Renderer that uses threads (no actors)
+object ThreadsRenderer extends Renderer {
+  import java.util.concurrent.{ CountDownLatch, BlockingQueue, LinkedBlockingQueue }
+
+  private case class Batch(samples: Traversable[Sample])
+
+  private val workQueue: BlockingQueue[Batch] = new LinkedBlockingQueue[Batch]()
+
+  private class ComputeThread (compute: Sample => Color, image: Image, countDownLatch: CountDownLatch) extends Thread {
+    override def run() {
+      try {
+        while (true) {
+          val batch = workQueue.take
+          for (s <- batch.samples) { image.add(s, compute(s)) }
+          countDownLatch.countDown
+        }
+      }
+      catch {
+        case ex: InterruptedException => // Let the thread stop
+      }
+    }
+  }
+
+  def render(sampler: Sampler, compute: Sample => Color, image: Image) {
+    val batchSize = Config.rendererBatchSize
+    println("- Batch size: " + batchSize)
+
+    val batchCount = (sampler.samples.size.toFloat / batchSize).ceil.toInt
+    println("- Number of batches: " + batchCount)
+
+    val countDownLatch = new CountDownLatch(batchCount)
+
+    val threadCount = Config.rendererThreadCount
+
+    println("- Starting threads; number of threads: " + threadCount)
+    val computeThreads = new Array[Thread](threadCount)
+    for (i <- 0 until threadCount) {
+      computeThreads(i) = new ComputeThread(compute, image, countDownLatch)
+      computeThreads(i).start
+    }
+
+    println("- Submitting batches")
+    var samples = sampler.samples
+    while (samples.nonEmpty) {
+      // Get a batch of samples and put it on the queue
+      val (batch, rest) = samples.splitAt(batchSize)
+      workQueue.put(Batch(batch))
+      samples = rest
+    }
+
+    // Wait for all the threads to finish
+    println("- Waiting for threads to finish")
+    countDownLatch.await
+
+    // Stop the threads
+    println("- Stopping threads")
+    computeThreads foreach { _.interrupt }
+  }
+
+  override def toString = "ThreadsRenderer"
 }

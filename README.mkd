@@ -20,7 +20,7 @@ Note: Especially when you use the renderers that use actors, and the number of s
 
 ## Configuration
 
-To configure MandelActors, edit the file `mandelactors.properties`. You can set the size of the output image, change settings for the sampler and reconstruction filter and parameters for the Mandelbrot algorithm. You can also select the renderer to use. Currently, there are three renderers:
+To configure MandelActors, edit the file `mandelactors.properties`. You can set the size of the output image, change settings for the sampler and reconstruction filter and parameters for the Mandelbrot algorithm. You can also select the renderer to use. Currently, there are four renderers:
 
 ### SingleThread
 
@@ -43,4 +43,13 @@ The ThreadActors renderer creates a fixed number of actors and sends them batche
 Configuration settings:
 
 - `renderer.actorCount` The number of actors to create (default: twice the number of CPU cores available to the JVM).
+- `renderer.batchSize` The number of samples per batch (default: 1024).
+
+### Threads
+
+This renderer does not use actors, but threads. It starts up a number of threads which pick up batches of samples from a work queue. The way this renderer works is a lot like the ThreadActors renderer.
+
+Configuration settings:
+
+- `renderer.threadCount` The number of threads to create (default: twice the number of CPU cores available to the JVM).
 - `renderer.batchSize` The number of samples per batch (default: 1024).

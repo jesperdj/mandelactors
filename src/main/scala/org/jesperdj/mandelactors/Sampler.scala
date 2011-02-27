@@ -34,7 +34,7 @@ trait Sampler {
 class StratifiedSampler (val rectangle: Rectangle, samplesPerPixelX: Int, samplesPerPixelY: Int, jitter: Boolean = true) extends Sampler {
   val samplesPerPixel = samplesPerPixelX * samplesPerPixelY
 
-  val samples: Traversable[Sample] = new Traversable[Sample] {
+  val samples = new Traversable[Sample] {
     def foreach[U](f: Sample => U): Unit =
       for (y <- rectangle.top to rectangle.bottom; x <- rectangle.left to rectangle.right) { generateSamples(x, y) foreach f }
 

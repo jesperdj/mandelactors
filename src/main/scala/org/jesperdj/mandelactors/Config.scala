@@ -47,6 +47,14 @@ object Config {
     }
   }
 
+  def renderer: Renderer = {
+    props.getProperty("renderer.name", "SingleThread") match {
+      case "SingleThread" => SingleThreadRenderer
+      case "Actors" => ActorsRenderer
+      case s => println("Invalid renderer specified: %s - using SingleThreadRenderer instead" format s.toString); SingleThreadRenderer
+    }
+  }
+
   // TODO: Palette configuration
 
   val center: Complex = Complex(

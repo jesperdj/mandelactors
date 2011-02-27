@@ -45,10 +45,11 @@ object Main {
     val mandelbrot = new Mandelbrot(rectangle, Config.center, Config.scale, Config.maxIterations, palette)
     println("- Center: %s, scale: %.12g, max iterations: %d" format (Config.center, Config.scale, Config.maxIterations))
 
-    // TODO: The current version does not use actors yet; it just uses the main thread for rendering. Implement this using actors.
+    val renderer = Config.renderer
+    println("- Renderer: %s" format renderer.toString)
 
     println("Rendering")
-    time { for (sample <- sampler.samples) image.add(sample, mandelbrot(sample)) }
+    time { renderer.render(sampler, mandelbrot, image) }
 
     println("Converting image")
     val bufferedImage = image.toBufferedImage

@@ -48,6 +48,7 @@ class Image (width: Int, height: Int, filter: Filter) {
       val pixel = raster(x, y)
       val weight = filter(x - ix, y - iy)
 
+      // NOTE: Synchronization is necessary here because multiple actors might be trying to update the same pixel concurrently
       pixel.synchronized {
         pixel.color +*= (color, weight)
         pixel.weight += weight

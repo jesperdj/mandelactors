@@ -18,11 +18,11 @@
 package org.jesperdj.mandelactors
 
 trait Renderer {
-  def render(sampler: Sampler, compute: (Sample => Color), image: Image)
+  def render(sampler: Sampler, compute: Sample => Color, image: Image)
 }
 
 object SingleThreadRenderer extends Renderer {
-  override def render(sampler: Sampler, compute: (Sample => Color), image: Image) {
+  override def render(sampler: Sampler, compute: Sample => Color, image: Image) {
     for (sample <- sampler.samples) image.add(sample, compute(sample))
   }
 
@@ -30,9 +30,36 @@ object SingleThreadRenderer extends Renderer {
 }
 
 object ActorsRenderer extends Renderer {
-  override def render(sampler: Sampler, compute: (Sample => Color), image: Image) {
-    // TODO: Implement ActorsRenderer
-    throw new UnsupportedOperationException("Not yet implemented")
+  import scala.actors.Actor._
+  import java.util.concurrent.CountDownLatch
+
+  private case class Batch(samples: Traversable[Sample])
+
+  override def render(sampler: Sampler, compute: Sample => Color, image: Image) {
+    val batchSize = Config.actorsRendererBatchSize
+    println("- Batch size: " + batchSize)
+
+    val counter = new CountDownLatch(sampler.samples.size)
+
+    println("- Starting actors")
+    var samples = sampler.samples
+    while (samples.nonEmpty) {
+      // Create an event-driven actor to do the computation for a batch of samples
+      val computeActor = actor {
+        react {
+          case b: Batch => for (s <- b.samples) { image.add(s, compute(s)); counter.countDown }
+        }
+      }
+
+      // Get a batch of samples and send it to the actor
+      val (batch, rest) = samples.splitAt(batchSize)
+      computeActor ! Batch(batch)
+      samples = rest
+    }
+
+    // Wait for all the actors to finish
+    println("- Waiting for actors to finish")
+    counter.await
   }
 
   override def toString = "ActorsRenderer"

@@ -22,6 +22,9 @@ object Main {
     println("MandelActors - Mandelbrot fractal generator using actors")
     println("Copyright (C) 2011  Jesper de Jong")
 
+    println("Press Enter to start...")
+    new java.util.Scanner(java.lang.System.in).nextLine
+
     println("Initializing")
     val rectangle = Rectangle(Config.imageWidth, Config.imageHeight)
     println("- Image size: %d x %d" format (Config.imageWidth, Config.imageHeight))

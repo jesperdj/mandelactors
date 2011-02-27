@@ -55,6 +55,8 @@ object Config {
     }
   }
 
+  val actorsRendererBatchSize: Int = JavaInteger.parseInt(props.getProperty("renderer.batchSize", "1024"))
+
   // TODO: Palette configuration
 
   val center: Complex = Complex(

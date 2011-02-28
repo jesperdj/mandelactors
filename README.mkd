@@ -2,8 +2,6 @@
 
 This is a simple [Mandelbrot fractal](http://en.wikipedia.org/wiki/Mandelbrot_set) generator that uses Scala actors. I wrote this to learn more about how actors work.
 
-Note: On my test system (with a dual-core Intel Core 2 Duo, running 64-bit Windows 7 with 64-bit Java 6) the renderers that use actors are not faster than the renderer that uses a single thread. I don't know why this is so; the actors versions certainly use both cores of the CPU.
-
 ## Prerequisites
 
 To compile and run MandelActors, you need:
@@ -14,9 +12,9 @@ To compile and run MandelActors, you need:
 
 After installing the JDK and Maven and adding their `bin` directories to your `PATH`, you can compile it with: `mvn compile`
 
-If you have compiled MandelActors successfully, run it with `run.bat`.
+If you have compiled MandelActors successfully, run it with `run.bat` (Windows) or `run.sh` (Mac OS X and Linux).
 
-Note: Especially when you use the renderers that use actors, and the number of samples is large (with a large image size and multiple samples per pixel), the program needs a lot of memory. You can set the maximum amount of memory to use by changing the value of the `-Xmx` parameter in the `JAVA_OPTS` environment variable in `run.bat`.
+Note: Especially when you use the renderers that use actors, and the number of samples is large (with a large image size and multiple samples per pixel), the program needs a lot of memory. You can set the maximum amount of memory to use by changing the value of the `-Xmx` parameter in the `JAVA_OPTS` environment variable in `run.bat` or `run.sh`.
 
 ## Configuration
 
@@ -30,10 +28,6 @@ This renderer uses a single thread to do the rendering. This is useful to compar
 
 This uses event-based actors: actors that use `react` to process messages. For each batch of samples, a new actor is created. This can potentially create a large number of actors, but event-based actors are very lightweight, so this is not a problem.
 
-Configuration settings:
-
-- `renderer.batchSize` The number of samples per batch (default: 4096).
-
 ### ThreadActors
 
 This uses thread-based actors: actors that use `receive` to process messages. Thread-based actors block the thread they are running on while waiting to receive a message, so that each actor needs its own thread. Therefore, they are much more heavyweight than event-based actors and you can't create a large number of them.
@@ -43,7 +37,6 @@ The ThreadActors renderer creates a fixed number of actors and sends them batche
 Configuration settings:
 
 - `renderer.actorCount` The number of actors to create (default: twice the number of CPU cores available to the JVM).
-- `renderer.batchSize` The number of samples per batch (default: 4096).
 
 ### Threads
 
@@ -52,4 +45,3 @@ This renderer does not use actors, but threads. It starts up a number of threads
 Configuration settings:
 
 - `renderer.threadCount` The number of threads to create (default: twice the number of CPU cores available to the JVM).
-- `renderer.batchSize` The number of samples per batch (default: 4096).

@@ -22,15 +22,18 @@ object Main {
     println("MandelActors - Mandelbrot fractal generator using actors")
     println("Copyright (C) 2011  Jesper de Jong")
 
-    println("Press Enter to start...")
-    new java.util.Scanner(java.lang.System.in).nextLine
+//    println("Press Enter to start...")
+//    new java.util.Scanner(java.lang.System.in).nextLine
 
     println("Initializing")
     val rectangle = Rectangle(Config.imageWidth, Config.imageHeight)
     println("- Image size: %d x %d" format (Config.imageWidth, Config.imageHeight))
 
-    val sampler = new StratifiedSampler(rectangle, Config.samplesPerPixelX, Config.samplesPerPixelY, Config.jitter)
-    println("- Samples per pixel: %d x %d, jitter: %b" format (Config.samplesPerPixelX, Config.samplesPerPixelY, Config.jitter))
+    val sampler = new StratifiedSampler(rectangle, Config.samplesPerPixelX, Config.samplesPerPixelY, Config.samplesPerBatch, Config.jitter)
+    println("- Sampler: %s" format sampler.toString)
+    println("- Samples per pixel: %d x %d" format (Config.samplesPerPixelX, Config.samplesPerPixelY))
+    println("- Samples per batch: %d, number of batches: %d" format (Config.samplesPerBatch, sampler.batches.size))
+    println("- Jitter: %b" format Config.jitter)
 
     val filter = Config.filter
     println("- Filter: %s" format filter.toString)

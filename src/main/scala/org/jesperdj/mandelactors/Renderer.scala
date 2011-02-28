@@ -18,12 +18,12 @@
 package org.jesperdj.mandelactors
 
 trait Renderer {
-  def render(sampler: Sampler, compute: Sample => Color, image: Image)
+  def render(sampler: Sampler, compute: Sample => Color, image: Image): Unit
 }
 
 object SingleThreadRenderer extends Renderer {
   override def render(sampler: Sampler, compute: Sample => Color, image: Image) {
-    for (sample <- sampler.samples) image.add(sample, compute(sample))
+    for (batch <- sampler.batches; sample <- batch) image.add(sample, compute(sample))
   }
 
   override def toString = "SingleThreadRenderer"
@@ -34,31 +34,22 @@ object EventActorsRenderer extends Renderer {
   import scala.actors.Actor._
   import java.util.concurrent.CountDownLatch
 
-  private case class Batch(samples: Traversable[Sample])
-
   override def render(sampler: Sampler, compute: Sample => Color, image: Image) {
-    val batchSize = Config.rendererBatchSize
-    println("- Batch size: " + batchSize)
-
-    val batchCount = (sampler.samples.size.toFloat / batchSize).ceil.toInt
-    println("- Number of batches: " + batchCount)
-
-    val countDownLatch = new CountDownLatch(batchCount)
+    val countDownLatch = new CountDownLatch(sampler.batches.size)
 
     println("- Starting actors")
-    var samples = sampler.samples
-    while (samples.nonEmpty) {
+    for (batch <- sampler.batches) {
       // Create an event-driven actor to do the computation for a batch of samples
       val computeActor = actor {
         react {
-          case b: Batch => for (s <- b.samples) { image.add(s, compute(s)) }; countDownLatch.countDown
+          case b: SampleBatch =>
+            for (sample <- b) image.add(sample, compute(sample))
+            countDownLatch.countDown
         }
       }
 
-      // Get a batch of samples and send it to the actor
-      val (batch, rest) = samples.splitAt(batchSize)
-      computeActor ! Batch(batch)
-      samples = rest
+      // Send the batch to the actor
+      computeActor ! batch
     }
 
     // Wait for all the actors to finish
@@ -74,13 +65,14 @@ object ThreadActorsRenderer extends Renderer {
   import scala.actors.Actor
   import java.util.concurrent.CountDownLatch
 
-  private case class Batch(samples: Traversable[Sample])
-
   private class ComputeActor (compute: Sample => Color, image: Image, countDownLatch: CountDownLatch) extends Actor {
     def act() {
       loop {
         receive {
-          case b: Batch => for (s <- b.samples) { image.add(s, compute(s)) }; countDownLatch.countDown
+          case batch: SampleBatch =>
+            for (sample <- batch) image.add(sample, compute(sample))
+            countDownLatch.countDown
+
           case 'Exit => exit
         }
       }
@@ -88,13 +80,7 @@ object ThreadActorsRenderer extends Renderer {
   }
 
   override def render(sampler: Sampler, compute: Sample => Color, image: Image) {
-    val batchSize = Config.rendererBatchSize
-    println("- Batch size: " + batchSize)
-
-    val batchCount = (sampler.samples.size.toFloat / batchSize).ceil.toInt
-    println("- Number of batches: " + batchCount)
-
-    val countDownLatch = new CountDownLatch(batchCount)
+    val countDownLatch = new CountDownLatch(sampler.batches.size)
 
     val actorCount = Config.rendererActorCount
 
@@ -104,15 +90,12 @@ object ThreadActorsRenderer extends Renderer {
 
     println("- Sending messages")
     var i = 0
-    var samples = sampler.samples
-    while (samples.nonEmpty) {
+    for (batch <- sampler.batches) {
       // Select the actor to send the next message to
       val computeActor = computeActors(i % actorCount); i += 1
 
-      // Get a batch of samples and send it to the actor
-      val (batch, rest) = samples.splitAt(batchSize)
-      computeActor ! Batch(batch)
-      samples = rest
+      // Send the batch to the actor
+      computeActor ! batch
     }
 
     // Wait for all the actors to finish
@@ -131,16 +114,14 @@ object ThreadActorsRenderer extends Renderer {
 object ThreadsRenderer extends Renderer {
   import java.util.concurrent.{ CountDownLatch, BlockingQueue, LinkedBlockingQueue }
 
-  private case class Batch(samples: Traversable[Sample])
-
-  private val workQueue: BlockingQueue[Batch] = new LinkedBlockingQueue[Batch]()
+  private val workQueue: BlockingQueue[SampleBatch] = new LinkedBlockingQueue[SampleBatch]()
 
   private class ComputeThread (compute: Sample => Color, image: Image, countDownLatch: CountDownLatch) extends Thread {
     override def run() {
       try {
         while (true) {
           val batch = workQueue.take
-          for (s <- batch.samples) { image.add(s, compute(s)) }
+          for (sample <- batch) image.add(sample, compute(sample))
           countDownLatch.countDown
         }
       }
@@ -151,13 +132,7 @@ object ThreadsRenderer extends Renderer {
   }
 
   def render(sampler: Sampler, compute: Sample => Color, image: Image) {
-    val batchSize = Config.rendererBatchSize
-    println("- Batch size: " + batchSize)
-
-    val batchCount = (sampler.samples.size.toFloat / batchSize).ceil.toInt
-    println("- Number of batches: " + batchCount)
-
-    val countDownLatch = new CountDownLatch(batchCount)
+    val countDownLatch = new CountDownLatch(sampler.batches.size)
 
     val threadCount = Config.rendererThreadCount
 
@@ -169,13 +144,7 @@ object ThreadsRenderer extends Renderer {
     }
 
     println("- Submitting batches")
-    var samples = sampler.samples
-    while (samples.nonEmpty) {
-      // Get a batch of samples and put it on the queue
-      val (batch, rest) = samples.splitAt(batchSize)
-      workQueue.put(Batch(batch))
-      samples = rest
-    }
+    for (batch <- sampler.batches) workQueue.put(batch)
 
     // Wait for all the threads to finish
     println("- Waiting for threads to finish")

@@ -36,6 +36,7 @@ object Config {
   // Sampler settings
   val samplesPerPixelX: Int = JavaInteger.parseInt(props.getProperty("sampler.samplesPerPixelX", "1"))
   val samplesPerPixelY: Int = JavaInteger.parseInt(props.getProperty("sampler.samplesPerPixelY", "1"))
+  val samplesPerBatch: Int = JavaInteger.parseInt(props.getProperty("sampler.samplesPerBatch", "4096"))
   val jitter: Boolean = JavaBoolean.parseBoolean(props.getProperty("sampler.jitter", "true"))
 
   // Reconstruction filter
@@ -68,9 +69,6 @@ object Config {
   // Number of threads (for ThreadsRenderer)
   val rendererThreadCount: Int = JavaInteger.parseInt(
     props.getProperty("renderer.threadCount", (2 * Runtime.getRuntime.availableProcessors).toString))
-
-  // Number of samples per batch
-  val rendererBatchSize: Int = JavaInteger.parseInt(props.getProperty("renderer.batchSize", "4096"))
 
   // TODO: Palette configuration
 

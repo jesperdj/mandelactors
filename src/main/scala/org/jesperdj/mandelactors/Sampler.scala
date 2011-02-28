@@ -22,31 +22,65 @@ package org.jesperdj.mandelactors
 
 import scala.collection.immutable.Traversable
 
-class Sample (val x: Float, val y: Float)
+case class Sample (x: Float, y: Float)
+
+trait SampleBatch extends Traversable[Sample]
 
 trait Sampler {
   val rectangle: Rectangle
   val samplesPerPixel: Int
 
-  val samples: Traversable[Sample]
+  val batches: Traversable[SampleBatch]
 }
 
-class StratifiedSampler (val rectangle: Rectangle, samplesPerPixelX: Int, samplesPerPixelY: Int, jitter: Boolean = true) extends Sampler {
+class StratifiedSampler (val rectangle: Rectangle, samplesPerPixelX: Int, samplesPerPixelY: Int, samplesPerBatch: Int, jitter: Boolean) extends Sampler {
   val samplesPerPixel = samplesPerPixelX * samplesPerPixelY
 
-  val samples = new Traversable[Sample] {
-    def foreach[U](f: Sample => U): Unit =
-      for (y <- rectangle.top to rectangle.bottom; x <- rectangle.left to rectangle.right) { generateSamples(x, y) foreach f }
+  val batches = new Traversable[SampleBatch] {
+    private class SampleBatchImpl (data: Array[Float]) extends SampleBatch {
+      def foreach[U](f: Sample => U): Unit = for (i <- 0 until data.length by 2) f(new Sample(data(i), data(i + 1)))
+      override def size = data.length / 2
+    }
 
-    override val size = rectangle.width * rectangle.height * samplesPerPixel
+    def foreach[U](f: SampleBatch => U): Unit = {
+      // Number of samples left to generate
+      var count = rectangle.width * rectangle.height * samplesPerPixel
 
-    private val random = new scala.util.Random
+      // Indices of the next sample to generate: (px, py) = pixel, (sx, sy) = sample for the current pixel
+      var px = rectangle.left; var py = rectangle.top
+      var sx = 0; var sy = 0
 
-    // Generate samples for one pixel
-    private def generateSamples(x: Int, y: Int): Traversable[Sample] =
-      for (sy <- 0 until samplesPerPixelY; sx <- 0 until samplesPerPixelX) yield {
-        val (jx, jy) = if (jitter) (random.nextFloat, random.nextFloat) else (0.5f, 0.5f)
-        new Sample(x + ((sx + jx) / samplesPerPixelX), y + ((sy + jy) / samplesPerPixelY))
+      val random = new scala.util.Random
+
+      0 to size foreach { _ =>
+        val batchSize = math.min(samplesPerBatch, count)
+        val data = new Array[Float](2 * batchSize)
+
+        for (i <- 0 until data.length by 2) {
+          // Generate a sample
+          val (jx, jy) = if (jitter) (random.nextFloat, random.nextFloat) else (0.5f, 0.5f)
+          data(i) = px + ((sx + jx) / samplesPerPixelX)
+          data(i + 1) = py + ((sy + jy) / samplesPerPixelY)
+
+          // Move indices to the next sample
+          sx += 1
+          if (sx >= samplesPerPixelX) {
+            sx = 0; sy += 1
+            if (sy >= samplesPerPixelY) {
+              sy = 0; px += 1
+              if (px > rectangle.right) { px = rectangle.left; py += 1 }
+            }
+          }
+        }
+
+        f(new SampleBatchImpl(data))
+
+        count -= batchSize
       }
+    }
+
+    override val size = ((rectangle.width * rectangle.height * samplesPerPixel) / samplesPerBatch.toFloat).ceil.toInt
   }
+
+  override def toString = "StratifiedSampler"
 }

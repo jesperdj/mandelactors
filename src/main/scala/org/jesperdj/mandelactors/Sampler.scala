@@ -36,31 +36,27 @@ trait Sampler {
 class StratifiedSampler (val rectangle: Rectangle, samplesPerPixelX: Int, samplesPerPixelY: Int, samplesPerBatch: Int, jitter: Boolean) extends Sampler {
   val samplesPerPixel = samplesPerPixelX * samplesPerPixelY
 
+  private val numberOfBatches = ((rectangle.width * rectangle.height * samplesPerPixel) / samplesPerBatch.toFloat).ceil.toInt
+
   val batches = new Traversable[SampleBatch] {
-    private class SampleBatchImpl (data: Array[Float]) extends SampleBatch {
-      def foreach[U](f: Sample => U): Unit = for (i <- 0 until data.length by 2) f(new Sample(data(i), data(i + 1)))
-      override def size = data.length / 2
-    }
+    private class SampleBatchImpl (batchIndex: Int) extends SampleBatch {
+      def foreach[U](f: Sample => U): Unit = {
+        val sampleIndex = batchIndex * samplesPerBatch
 
-    def foreach[U](f: SampleBatch => U): Unit = {
-      // Number of samples left to generate
-      var count = rectangle.width * rectangle.height * samplesPerPixel
+        val samplesPerPY = rectangle.width * samplesPerPixel
+        val samplesPerSY = (sampleIndex % samplesPerPY) % samplesPerPixel
 
-      // Indices of the next sample to generate: (px, py) = pixel, (sx, sy) = sample for the current pixel
-      var px = rectangle.left; var py = rectangle.top
-      var sx = 0; var sy = 0
+        var py = sampleIndex / samplesPerPY
+        var px = (sampleIndex % samplesPerPY) / samplesPerPixel
+        var sy = samplesPerSY / samplesPerPixelX
+        var sx = samplesPerSY % samplesPerPixelX
 
-      val random = new scala.util.Random
+        val random = new scala.util.Random
 
-      0 to size foreach { _ =>
-        val batchSize = math.min(samplesPerBatch, count)
-        val data = new Array[Float](2 * batchSize)
-
-        for (i <- 0 until data.length by 2) {
+        0 until size foreach { _ =>
           // Generate a sample
           val (jx, jy) = if (jitter) (random.nextFloat, random.nextFloat) else (0.5f, 0.5f)
-          data(i) = px + ((sx + jx) / samplesPerPixelX)
-          data(i + 1) = py + ((sy + jy) / samplesPerPixelY)
+          f(new Sample(px + ((sx + jx) / samplesPerPixelX), py + ((sy + jy) / samplesPerPixelY)))
 
           // Move indices to the next sample
           sx += 1
@@ -72,14 +68,17 @@ class StratifiedSampler (val rectangle: Rectangle, samplesPerPixelX: Int, sample
             }
           }
         }
+      }
 
-        f(new SampleBatchImpl(data))
-
-        count -= batchSize
+      override def size = if (batchIndex < numberOfBatches - 1) samplesPerBatch else {
+        // The last batch contains the remaining samples (can be less than samplesPerBatch)
+        rectangle.width * rectangle.height * samplesPerPixel - (numberOfBatches - 1) * samplesPerBatch
       }
     }
 
-    override val size = ((rectangle.width * rectangle.height * samplesPerPixel) / samplesPerBatch.toFloat).ceil.toInt
+    def foreach[U](f: SampleBatch => U): Unit = for (batchIndex <- 0 until size) f(new SampleBatchImpl(batchIndex))
+
+    override val size = numberOfBatches
   }
 
   override def toString = "StratifiedSampler"

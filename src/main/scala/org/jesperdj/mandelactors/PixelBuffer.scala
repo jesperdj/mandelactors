@@ -23,9 +23,7 @@ trait Weight {
   var weight: Float = 0.0f
 }
 
-class Image (width: Int, height: Int, filter: Filter) {
-  private val rectangle = new Rectangle(0, 0, width - 1, height - 1)
-
+class PixelBuffer (val rectangle: Rectangle, filter: Filter) {
   private val raster = {
     val r = new Raster[Pixel with Weight](rectangle)
     for (y <- rectangle.top to rectangle.bottom; x <- rectangle.left to rectangle.right) r(x, y) = new Pixel with Weight
@@ -56,21 +54,18 @@ class Image (width: Int, height: Int, filter: Filter) {
     }
   }
 
-  def toBufferedImage: java.awt.image.BufferedImage = {
+  def toImage: java.awt.image.BufferedImage = {
     def toByte(value: Float): Int = if (value < 0.0f) 0 else if (value > 1.0f) 255 else (value * 255.0f).toInt
 
-    val bufferedImage = new java.awt.image.BufferedImage(width, height, java.awt.image.BufferedImage.TYPE_INT_RGB)
+    val image = new java.awt.image.BufferedImage(rectangle.width, rectangle.height, java.awt.image.BufferedImage.TYPE_INT_RGB)
 
     for (y <- rectangle.top to rectangle.bottom; x <- rectangle.left to rectangle.right) {
-      val px = x - rectangle.left
-      val py = y - rectangle.top
-
-      val pixel = raster(px, py)
+      val pixel = raster(x, y)
       val color = if (pixel.weight != 0.0f) pixel.color / pixel.weight else Color.Black
 
-      bufferedImage.setRGB(px, py, toByte(color.red) << 16 | toByte(color.green) << 8 | toByte(color.blue))
+      image.setRGB(x, y, toByte(color.red) << 16 | toByte(color.green) << 8 | toByte(color.blue))
     }
 
-    bufferedImage
+    image
   }
 }

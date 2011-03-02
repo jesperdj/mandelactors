@@ -18,12 +18,12 @@
 package org.jesperdj.mandelactors
 
 trait Renderer {
-  def render(sampler: Sampler, compute: Sample => Color, image: Image): Unit
+  def render(sampler: Sampler, compute: Sample => Color, pixelBuffer: PixelBuffer): Unit
 }
 
 object SingleThreadRenderer extends Renderer {
-  override def render(sampler: Sampler, compute: Sample => Color, image: Image) {
-    for (batch <- sampler.batches; sample <- batch) image.add(sample, compute(sample))
+  override def render(sampler: Sampler, compute: Sample => Color, pixelBuffer: PixelBuffer) {
+    for (batch <- sampler.batches; sample <- batch) pixelBuffer.add(sample, compute(sample))
   }
 
   override def toString = "SingleThreadRenderer"
@@ -34,7 +34,7 @@ object EventActorsRenderer extends Renderer {
   import scala.actors.Actor._
   import java.util.concurrent.CountDownLatch
 
-  override def render(sampler: Sampler, compute: Sample => Color, image: Image) {
+  override def render(sampler: Sampler, compute: Sample => Color, pixelBuffer: PixelBuffer) {
     val countDownLatch = new CountDownLatch(sampler.batches.size)
 
     println("- Starting actors")
@@ -43,7 +43,7 @@ object EventActorsRenderer extends Renderer {
       val computeActor = actor {
         react {
           case b: SampleBatch =>
-            for (sample <- b) image.add(sample, compute(sample))
+            for (sample <- b) pixelBuffer.add(sample, compute(sample))
             countDownLatch.countDown
         }
       }
@@ -65,12 +65,12 @@ object ThreadActorsRenderer extends Renderer {
   import scala.actors.Actor
   import java.util.concurrent.CountDownLatch
 
-  private class ComputeActor (compute: Sample => Color, image: Image, countDownLatch: CountDownLatch) extends Actor {
+  private class ComputeActor (compute: Sample => Color, pixelBuffer: PixelBuffer, countDownLatch: CountDownLatch) extends Actor {
     def act() {
       loop {
         receive {
           case batch: SampleBatch =>
-            for (sample <- batch) image.add(sample, compute(sample))
+            for (sample <- batch) pixelBuffer.add(sample, compute(sample))
             countDownLatch.countDown
 
           case 'Exit => exit
@@ -79,14 +79,14 @@ object ThreadActorsRenderer extends Renderer {
     }
   }
 
-  override def render(sampler: Sampler, compute: Sample => Color, image: Image) {
+  override def render(sampler: Sampler, compute: Sample => Color, pixelBuffer: PixelBuffer) {
     val countDownLatch = new CountDownLatch(sampler.batches.size)
 
     val actorCount = Config.rendererActorCount
 
     println("- Starting actors; number of actors: " + actorCount)
     val computeActors = new Array[Actor](actorCount)
-    for (i <- 0 until actorCount) computeActors(i) = new ComputeActor(compute, image, countDownLatch).start
+    for (i <- 0 until actorCount) computeActors(i) = new ComputeActor(compute, pixelBuffer, countDownLatch).start
 
     println("- Sending messages")
     var i = 0
@@ -116,12 +116,12 @@ object ThreadsRenderer extends Renderer {
 
   private val workQueue: BlockingQueue[SampleBatch] = new LinkedBlockingQueue[SampleBatch]()
 
-  private class ComputeThread (compute: Sample => Color, image: Image, countDownLatch: CountDownLatch) extends Thread {
+  private class ComputeThread (compute: Sample => Color, pixelBuffer: PixelBuffer, countDownLatch: CountDownLatch) extends Thread {
     override def run() {
       try {
         while (true) {
           val batch = workQueue.take
-          for (sample <- batch) image.add(sample, compute(sample))
+          for (sample <- batch) pixelBuffer.add(sample, compute(sample))
           countDownLatch.countDown
         }
       }
@@ -131,7 +131,7 @@ object ThreadsRenderer extends Renderer {
     }
   }
 
-  def render(sampler: Sampler, compute: Sample => Color, image: Image) {
+  def render(sampler: Sampler, compute: Sample => Color, pixelBuffer: PixelBuffer) {
     val countDownLatch = new CountDownLatch(sampler.batches.size)
 
     val threadCount = Config.rendererThreadCount
@@ -139,7 +139,7 @@ object ThreadsRenderer extends Renderer {
     println("- Starting threads; number of threads: " + threadCount)
     val computeThreads = new Array[Thread](threadCount)
     for (i <- 0 until threadCount) {
-      computeThreads(i) = new ComputeThread(compute, image, countDownLatch)
+      computeThreads(i) = new ComputeThread(compute, pixelBuffer, countDownLatch)
       computeThreads(i).start
     }
 

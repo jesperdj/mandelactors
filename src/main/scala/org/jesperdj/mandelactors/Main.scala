@@ -38,7 +38,7 @@ object Main {
     val filter = Config.filter
     println("- Filter: %s" format filter.toString)
 
-    val image = new Image(rectangle.width, rectangle.height, filter)
+    val pixelBuffer = new PixelBuffer(rectangle, filter)
 
     val p1 = new PalettePoint(0.0f, Color(0.0f, 0.0f, 0.6f))
     val p2 = new PalettePoint(0.2f, Color(1.0f, 0.5f, 0.0f))
@@ -55,13 +55,13 @@ object Main {
     println("- Renderer: %s" format renderer.toString)
 
     println("Rendering")
-    time { renderer.render(sampler, mandelbrot, image) }
+    time { renderer.render(sampler, mandelbrot, pixelBuffer) }
 
     println("Converting image")
-    val bufferedImage = image.toBufferedImage
+    val bufferedImage = pixelBuffer.toImage
 
     println("Saving image")
-    javax.imageio.ImageIO.write(image.toBufferedImage, "png", new java.io.File("output.png"))
+    javax.imageio.ImageIO.write(pixelBuffer.toImage, "png", new java.io.File("output.png"))
 
     println("Finished")
   }

@@ -58,10 +58,10 @@ object Main {
     time { renderer.render(sampler, mandelbrot, pixelBuffer) }
 
     println("Converting image")
-    val bufferedImage = pixelBuffer.toImage
+    val image = pixelBuffer.toImage
 
     println("Saving image")
-    javax.imageio.ImageIO.write(pixelBuffer.toImage, "png", new java.io.File("output.png"))
+    javax.imageio.ImageIO.write(image, "png", new java.io.File("output.png"))
 
     println("Finished")
   }

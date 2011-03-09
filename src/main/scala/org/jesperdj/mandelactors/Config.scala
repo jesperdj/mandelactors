@@ -82,5 +82,5 @@ object Config {
   val scale: Double = JavaDouble.parseDouble(props.getProperty("mandelbrot.scale", "1.75"))
 
   // Maximum number of iterations
-  val maxIterations: Int = JavaInteger.parseInt(props.getProperty("mandelbrot.maxIterations", "1000"))
+  val maxIterations: Int = JavaInteger.parseInt(props.getProperty("mandelbrot.maxIterations", "100"))
 }

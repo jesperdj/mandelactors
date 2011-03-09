@@ -46,8 +46,8 @@ class StratifiedSampler (val rectangle: Rectangle, samplesPerPixelX: Int, sample
         val samplesPerPY = rectangle.width * samplesPerPixel
         val samplesPerSY = (sampleIndex % samplesPerPY) % samplesPerPixel
 
-        var py = sampleIndex / samplesPerPY
-        var px = (sampleIndex % samplesPerPY) / samplesPerPixel
+        var py = rectangle.top + sampleIndex / samplesPerPY
+        var px = rectangle.left + (sampleIndex % samplesPerPY) / samplesPerPixel
         var sy = samplesPerSY / samplesPerPixelX
         var sx = samplesPerSY % samplesPerPixelX
 

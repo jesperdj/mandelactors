@@ -63,7 +63,7 @@ class PixelBuffer (val rectangle: Rectangle, filter: Filter) {
       val pixel = raster(x, y)
       val color = if (pixel.weight != 0.0f) pixel.color / pixel.weight else Color.Black
 
-      image.setRGB(x, y, toByte(color.red) << 16 | toByte(color.green) << 8 | toByte(color.blue))
+      image.setRGB(x - rectangle.left, y - rectangle.top, toByte(color.red) << 16 | toByte(color.green) << 8 | toByte(color.blue))
     }
 
     image

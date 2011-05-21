@@ -29,6 +29,14 @@ object SingleThreadRenderer extends Renderer {
   override def toString = "SingleThreadRenderer"
 }
 
+object ParallelCollectionsRenderer extends Renderer {
+  override def render(sampler: Sampler, compute: Sample => Color, pixelBuffer: PixelBuffer) {
+    for (batch <- sampler.batches.par; sample <- batch) pixelBuffer.add(sample, compute(sample))
+  }
+
+  override def toString = "ParallelCollectionsRenderer"
+}
+
 // Renderer that uses event-based actors
 object EventActorsRenderer extends Renderer {
   import scala.actors.Actor._

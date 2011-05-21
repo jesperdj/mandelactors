@@ -55,6 +55,7 @@ object Config {
   def renderer: Renderer = {
     props.getProperty("renderer.name", "SingleThread") match {
       case "SingleThread" => SingleThreadRenderer
+      case "ParallelCollections" => ParallelCollectionsRenderer
       case "EventActors" => EventActorsRenderer
       case "ThreadActors" => ThreadActorsRenderer
       case "Threads" => ThreadsRenderer

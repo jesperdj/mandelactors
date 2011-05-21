@@ -18,11 +18,15 @@ Note: Especially when you use the renderers that use actors, and the number of s
 
 ## Configuration
 
-To configure MandelActors, edit the file `mandelactors.properties`. You can set the size of the output image, change settings for the sampler and reconstruction filter and parameters for the Mandelbrot algorithm. You can also select the renderer to use. Currently, there are four renderers:
+To configure MandelActors, edit the file `mandelactors.properties`. You can set the size of the output image, change settings for the sampler and reconstruction filter and parameters for the Mandelbrot algorithm. You can also select the renderer to use. Currently, there are five renderers:
 
 ### SingleThread
 
 This renderer uses a single thread to do the rendering. This is useful to compare how fast the actor renderers perform compared to doing everything in a single thread.
+
+### ParallelCollections
+
+This renderer uses Scala 2.9 parallel collections.
 
 ### EventActors
 

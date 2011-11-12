@@ -17,7 +17,7 @@
  */
 package org.jesperdj.mandelactors
 
-class Color (val red: Float, val green: Float, val blue: Float) {
+class Color (val red: Float, val green: Float, val blue: Float) extends Serializable {
   def +(color: Color) = new Color(red + color.red, green + color.green, blue + color.blue)
 
   def *(weight: Float): Color = new Color(weight * red, weight * green, weight * blue)
@@ -26,15 +26,15 @@ class Color (val red: Float, val green: Float, val blue: Float) {
   def +*(color: Color, weight: Float): Color = new Color(red + weight * color.red, green + weight * color.green, blue + weight * color.blue)
 }
 
-object Color {
+object Color extends Serializable {
   val Black = new Color(0.0f, 0.0f, 0.0f)
   val White = new Color(1.0f, 1.0f, 1.0f)
   def apply(red: Float, green: Float, blue: Float) = new Color(red, green, blue)
 }
 
-class PalettePoint (val value: Float, val color: Color)
+class PalettePoint (val value: Float, val color: Color) extends Serializable
 
-class Palette (points: PalettePoint*) {
+class Palette (points: PalettePoint*) extends Serializable {
   def apply(value: Float): Color = {
     // Find the interval that value is between
     val (hd, tl) = points span { _.value <= value }

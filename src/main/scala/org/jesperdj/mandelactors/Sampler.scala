@@ -22,25 +22,33 @@ package org.jesperdj.mandelactors
 
 import scala.collection.immutable.Traversable
 
+import scala.collection._
+import scala.collection.generic._
+import scala.collection.mutable.{ Builder, ListBuffer }
+
 case class Sample (x: Float, y: Float)
 
-trait SampleBatch extends Traversable[Sample]
+//trait SampleBatch extends Traversable[Sample]
+trait SampleBatch extends SerializableColl[Sample]
 
 trait Sampler {
   val rectangle: Rectangle
   val samplesPerPixel: Int
 
-  val batches: Traversable[SampleBatch]
+  //val batches: Traversable[SampleBatch]
+  val batches: SerializableColl[SampleBatch]
 }
 
-class StratifiedSampler (val rectangle: Rectangle, samplesPerPixelX: Int, samplesPerPixelY: Int, samplesPerBatch: Int, jitter: Boolean) extends Sampler {
+class StratifiedSampler (val rectangle: Rectangle, samplesPerPixelX: Int, samplesPerPixelY: Int, samplesPerBatch: Int, jitter: Boolean) extends Sampler
+        with Serializable {
   val samplesPerPixel = samplesPerPixelX * samplesPerPixelY
 
   private val numberOfBatches = ((rectangle.width * rectangle.height * samplesPerPixel) / samplesPerBatch.toFloat).ceil.toInt
 
-  val batches = new Traversable[SampleBatch] {
+  //val batches = new Traversable[SampleBatch] {
+  val batches = new SerializableColl[SampleBatch] {
     private class SampleBatchImpl (batchIndex: Int) extends SampleBatch {
-      def foreach[U](f: Sample => U): Unit = {
+      override def foreach[U](f: Sample => U): Unit = {
         val sampleIndex = batchIndex * samplesPerBatch
 
         val samplesPerPY = rectangle.width * samplesPerPixel
@@ -76,10 +84,24 @@ class StratifiedSampler (val rectangle: Rectangle, samplesPerPixelX: Int, sample
       }
     }
 
-    def foreach[U](f: SampleBatch => U): Unit = for (batchIndex <- 0 until size) f(new SampleBatchImpl(batchIndex))
+    //def foreach[U](f: SampleBatch => U): Unit = for (batchIndex <- 0 until size) f(new SampleBatchImpl(batchIndex))
+    override def foreach[U](f: SampleBatch => U): Unit = for (batchIndex <- 0 until size) f(new SampleBatchImpl(batchIndex))
 
     override val size = numberOfBatches
   }
 
   override def toString = "StratifiedSampler"
+}
+
+class SerializableColl[A](seq : A*) extends Traversable[A]
+                             with GenericTraversableTemplate[A, SerializableColl]
+                             with TraversableLike[A, SerializableColl[A]]
+                             with Serializable {
+  override def companion = SerializableColl
+  def foreach[U](f: A => U) = util.Random.shuffle(seq.toSeq).foreach(f)
+}
+
+object SerializableColl extends TraversableFactory[SerializableColl] {
+  implicit def canBuildFrom[A]: CanBuildFrom[Coll, A, SerializableColl[A]] = new GenericCanBuildFrom[A]
+  def newBuilder[A] = new ListBuffer[A] mapResult (x => new SerializableColl(x:_*))
 }

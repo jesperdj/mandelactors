@@ -17,17 +17,17 @@
  */
 package org.jesperdj.mandelactors
 
-class Rectangle (val left: Int, val top: Int, val right: Int, val bottom: Int) {
+class Rectangle (val left: Int, val top: Int, val right: Int, val bottom: Int) extends Serializable {
   val width = right - left + 1
   val height = bottom - top + 1
 }
 
-object Rectangle {
+object Rectangle extends Serializable {
   def apply(left: Int, top: Int, right: Int, bottom: Int) = new Rectangle(left, top, right, bottom)
   def apply(width: Int, height: Int) = new Rectangle(0, 0, width - 1, height - 1)
 }
 
-class Raster[T : ClassManifest] (val rectangle: Rectangle) {
+class Raster[T : ClassManifest] (val rectangle: Rectangle) extends Serializable {
   private val data = new Array[T](rectangle.width * rectangle.height)
 
   private def index(x: Int, y: Int): Int = (x - rectangle.left) + (y - rectangle.top) * rectangle.width

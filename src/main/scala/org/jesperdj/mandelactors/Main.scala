@@ -26,6 +26,7 @@ object Main {
 //    new java.util.Scanner(java.lang.System.in).nextLine
 
     println("Initializing")
+
     val rectangle = Rectangle(Config.imageWidth, Config.imageHeight)
     println("- Image size: %d x %d" format (Config.imageWidth, Config.imageHeight))
 
@@ -53,6 +54,8 @@ object Main {
 
     val renderer = Config.renderer
     println("- Renderer: %s" format renderer.toString)
+
+    println("- Processors Count: %s" format (Runtime.getRuntime.availableProcessors))
 
     println("Rendering")
     time { renderer.render(sampler, mandelbrot, pixelBuffer) }

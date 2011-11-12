@@ -17,7 +17,7 @@
  */
 package org.jesperdj.mandelactors
 
-class Complex(val re: Double, val im: Double) {
+class Complex(val re: Double, val im: Double) extends Serializable {
   def +(c: Complex) = new Complex(re + c.re, im + c.im)
   def *(c: Complex) = new Complex(re * c.re - im * c.im, im * c.re + re * c.im)
   def modulusSquared = re * re + im * im
@@ -26,12 +26,12 @@ class Complex(val re: Double, val im: Double) {
   override def toString = "(%.12g, %.12g)" format (re, im)
 }
 
-object Complex {
+object Complex extends Serializable {
   val Zero = new Complex(0.0, 0.0)
   def apply(re: Double, im: Double) = new Complex(re, im)
 }
 
-class Mandelbrot (rectangle: Rectangle, center: Complex, scale: Double, maxIterations: Int, palette: Palette) extends (Sample => Color) {
+class Mandelbrot (rectangle: Rectangle, center: Complex, scale: Double, maxIterations: Int, palette: Palette) extends (Sample => Color) with Serializable {
   private val lg2 = math.log(2.0)
   private def log2(value: Double) = math.log(value) / lg2
 

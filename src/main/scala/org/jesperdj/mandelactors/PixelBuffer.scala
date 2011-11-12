@@ -17,13 +17,13 @@
  */
 package org.jesperdj.mandelactors
 
-class Pixel (var color: Color = Color.Black)
+class Pixel (var color: Color = Color.Black) extends Serializable
 
-trait Weight {
+trait Weight extends Serializable {
   var weight: Float = 0.0f
 }
 
-class PixelBuffer (val rectangle: Rectangle, filter: Filter) {
+class PixelBuffer (val rectangle: Rectangle, filter: Filter) extends Serializable {
   private val raster = {
     val r = new Raster[Pixel with Weight](rectangle)
     for (y <- rectangle.top to rectangle.bottom; x <- rectangle.left to rectangle.right) r(x, y) = new Pixel with Weight

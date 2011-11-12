@@ -59,6 +59,8 @@ object Config {
       case "EventActors" => EventActorsRenderer
       case "ThreadActors" => ThreadActorsRenderer
       case "Threads" => ThreadsRenderer
+      case "EventFuturesActors" => EventFuturesActorsRenderer
+      case "EventFuturesRemoteActors" => EventFuturesRemoteActorsRenderer
       case s => println("Invalid renderer specified: %s - using SingleThreadRenderer instead" format s.toString); SingleThreadRenderer
     }
   }

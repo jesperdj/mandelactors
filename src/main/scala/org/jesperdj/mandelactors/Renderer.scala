@@ -165,3 +165,207 @@ object ThreadsRenderer extends Renderer {
 
   override def toString = "ThreadsRenderer"
 }
+
+// The code below was contributed by Andre Kovacs
+
+// Renderer that uses event-based remote actors with futures
+object EventFuturesRemoteActorsRenderer extends Renderer {
+  import scala.actors.Actor._
+  import scala.actors.AbstractActor
+  import scala.actors.remote.RemoteActor.{select}
+  import scala.actors.remote.Node
+  import scala.collection.mutable.HashMap
+
+  override def render(sampler: Sampler, compute: Sample => Color, pixelBuffer: PixelBuffer) {
+    println("- Starting server")
+    val serverStart = new Server
+    serverStart.start()
+
+    val server = select(Node("localhost", 9000), 'server)
+    println("- Connected to server")
+
+    val actorCount = Config.rendererActorCount
+
+    println("- Starting actors; number of actors: " + actorCount)
+    val computeActors = new Array[AbstractActor](actorCount)
+    for (i <- 0 until actorCount) {
+      server ! Start(classOf[EventRemoteActor])
+
+      // Create an event-driven actor to do the computation for a batch of samples
+      val computeActor = select(Node("localhost", 9000), 'mandelbench)
+      println("- Connected to actor")
+
+      computeActors(i) = computeActor
+    }
+
+    var i = 0
+    val dataFutures = for (batch <- sampler.batches) yield {
+      // Select the actor to send the next message to
+      val computeActor = computeActors(i % actorCount); i += 1
+
+      // Send the batch to the actor
+      computeActor !! Render(batch, compute)
+    }
+
+    for (future <- dataFutures) {
+      future.inputChannel.receive {
+        case pixelMap: HashMap[Sample, Color] =>
+          val pixelBufferActor = actor {
+            react {
+              case pixelMap: HashMap[Sample,Color] =>
+                for (sample <- pixelMap.keys) {
+                  val color: Option[Color] = pixelMap.get(sample)
+                  pixelBuffer.add(sample, color.get)
+                }
+            }
+          }
+
+          // Send the pixelMap to the actor
+          pixelBufferActor ! pixelMap
+
+        case _ => println("- Error")
+      }
+    }
+
+    for (i <- 0 until actorCount) computeActors(i) ! Stop
+
+    server ! Stop
+
+    // Wait for all the actors to finish
+    println("- Waiting for actors to finish")
+  }
+
+  override def toString = "EventFuturesRemoteActorsRenderer"
+}
+
+case class Render(b: SampleBatch, compute: Sample => Color)
+
+class EventRemoteActor extends scala.actors.Actor with Serializable {
+  import scala.actors.remote.RemoteActor.{alive, register}
+  import scala.actors.remote.RemoteActor
+  import scala.collection.mutable.HashMap
+
+  def act() {
+    RemoteActor.classLoader = getClass().getClassLoader()
+    alive(9000)
+    register('mandelbench, this)
+    loop {
+      react {
+        case Render(b, compute) =>
+          val pixelMap = new HashMap[Sample, Color]
+          for (sample <- b) {
+            pixelMap.put(sample, compute(sample))
+          }
+          reply(pixelMap)
+      }
+    }
+  }
+}
+
+case class Start(clazz: Class[_ <: scala.actors.Actor])
+
+case object Stop
+
+class Server extends scala.actors.Actor with Serializable {
+  import scala.actors.Actor
+  import scala.actors.remote.RemoteActor.{alive, register}
+  import scala.actors.remote.RemoteActor
+
+  RemoteActor.classLoader = getClass().getClassLoader()
+  var numStarted = 0
+  def act() {
+    alive(9000)
+    register('server, this)
+    println("remote start server running...")
+    loop {
+      react {
+        case Start(clazz) =>
+          val a: Actor = clazz.newInstance()
+          a.start()
+          numStarted += 1
+          reply()
+
+        case Stop =>
+          println("remote start server started " + numStarted + " remote actors")
+          exit()
+      }
+    }
+  }
+}
+
+class EventActor extends scala.actors.Actor {
+  import scala.collection.mutable.HashMap
+
+  def act() {
+    loop {
+      react {
+        case Render(b, compute) =>
+          val pixelMap = new HashMap[Sample, Color]
+          for (sample <- b) {
+            pixelMap.put(sample, compute(sample))
+          }
+          reply(pixelMap)
+
+        case Stop => exit()
+      }
+    }
+  }
+
+  override def exceptionHandler = {
+    case e: Exception => println(e.getMessage())
+  }
+}
+
+// Renderer that uses event-based actors with futures
+object EventFuturesActorsRenderer extends Renderer {
+  import scala.actors.Actor
+  import scala.actors.Actor._
+  import scala.collection.mutable.HashMap
+
+  override def render(sampler: Sampler, compute: Sample => Color, pixelBuffer: PixelBuffer) {
+    val actorCount = Config.rendererActorCount
+
+    println("- Starting actors; number of actors: " + actorCount)
+
+    // Create event-driven actors to do the computation for a batch of samples
+    val computeActors = new Array[Actor](actorCount)
+    for (i <- 0 until actorCount) computeActors(i) = new EventActor().start
+
+    var i = 0
+    val dataFutures = for (batch <- sampler.batches) yield {
+
+      // Select the actor to send the next message to
+      val computeActor = computeActors(i % actorCount); i += 1
+
+      // Send the batch to the actor
+      computeActor !! Render(batch,compute)
+    }
+
+    for (future <- dataFutures) {
+      future.inputChannel.receive {
+        case pixelMap: HashMap[Sample,Color] =>
+          val pixelBufferActor = actor {
+            react {
+              case pixelMap: HashMap[Sample, Color] =>
+                for (sample <- pixelMap.keys) {
+                  val color:Option[Color] = pixelMap.get(sample)
+                  pixelBuffer.add(sample, color.get)
+                }
+            }
+          }
+
+          // Send the pixelMap to the actor
+          pixelBufferActor ! pixelMap
+
+        case _ => println("- Error")
+      }
+    }
+
+    for (i <- 0 until actorCount) computeActors(i) ! Stop
+
+    // Wait for all the actors to finish
+    println("- Waiting for actors to finish")
+  }
+
+  override def toString = "EventFuturesActorsRenderer"
+}

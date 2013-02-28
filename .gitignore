@@ -4,3 +4,4 @@ mandelactors.ipr
 mandelactors.iws
 target/
 output*.png
+*~
